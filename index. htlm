@@ -1,0 +1,571 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#20352b">
+<title>Ruleta Nagasawa | Descubre tu próxima lectura</title>
+<style>
+:root {
+  --green: #20352b;
+  --green2: #314b3b;
+  --cream: #f5eddb;
+  --gold: #c7a461;
+  --ink: #29271f;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: Georgia, "Times New Roman", serif;
+}
+header {
+  text-align: center;
+  padding: 30px 16px 20px;
+  background: var(--green);
+  color: var(--cream);
+  border-bottom: 4px solid var(--gold);
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 4px;
+  font: 11px Arial, sans-serif;
+  color: var(--gold);
+}
+h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(30px, 8vw, 48px);
+  font-weight: normal;
+}
+header p {
+  max-width: 480px;
+  margin: auto;
+  line-height: 1.6;
+  color: #e4dbc8;
+  font-size: 15px;
+}
+main {
+  max-width: 620px;
+  margin: auto;
+  padding: 22px 16px 36px;
+}
+.intro {
+  text-align: center;
+  line-height: 1.6;
+  margin: 0 auto 20px;
+  max-width: 440px;
+}
+.wheel-wrap {
+  position: relative;
+  width: min(100%, 430px);
+  margin: 0 auto 20px;
+  padding: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 8px 20px #0002;
+}
+canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 50%;
+  transform: rotate(0deg);
+}
+.pointer {
+  position: absolute;
+  z-index: 2;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 17px solid transparent;
+  border-right: 17px solid transparent;
+  border-top: 34px solid #a44432;
+  filter: drop-shadow(0 2px 2px #0003);
+}
+button {
+  font: bold 13px Arial, sans-serif;
+  letter-spacing: 1.5px;
+  border: 0;
+  cursor: pointer;
+  padding: 16px 22px;
+  border-radius: 3px;
+}
+button:disabled { opacity: .55; cursor: wait; }
+.primary {
+  background: var(--green);
+  color: var(--cream);
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto 12px;
+}
+.primary:hover { background: var(--green2); }
+.secondary {
+  border: 1px solid var(--green);
+  color: var(--green);
+  background: transparent;
+  width: 100%;
+  margin-top: 10px;
+}
+.result {
+  display: none;
+  background: #fffaf0;
+  border: 1px solid #d8c7a1;
+  border-top: 5px solid var(--gold);
+  padding: 24px 20px;
+  margin: 24px 0;
+  box-shadow: 0 5px 16px #0000000b;
+}
+.result.show { display: block; }
+.result-label {
+  font: 11px Arial, sans-serif;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #866c3f;
+}
+.result h2 {
+  font-size: clamp(25px, 6vw, 34px);
+  line-height: 1.15;
+  font-weight: normal;
+  margin: 12px 0 8px;
+}
+.author { font-style: italic; color: #665d4c; }
+.details { font: 12px Arial, sans-serif; color: #6d6658; }
+.description { line-height: 1.7; }
+.question {
+  border-left: 3px solid var(--gold);
+  padding-left: 12px;
+  line-height: 1.6;
+  font-style: italic;
+}
+footer {
+  text-align: center;
+  padding: 22px 16px;
+  background: var(--green);
+  color: #e4dbc8;
+  font-size: 12px;
+  line-height: 1.7;
+}
+footer strong { color: var(--gold); }
+.small-note {
+  font: 11px Arial, sans-serif;
+  text-align: center;
+  color: #77705f;
+  line-height: 1.6;
+  margin-top: 18px;
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="eyebrow">Una experiencia literaria</div>
+  <h1>Ruleta Nagasawa</h1>
+  <p>Sal de los algoritmos. Abre la puerta a otra época. Deja que el azar elija tu próxima lectura.</p>
+</header>
+
+<main>
+  <p class="intro">
+    Una regla: autores fallecidos hace al menos 30 años.
+    Veinticuatro caminos posibles. ¿Cuál será el tuyo?
+  </p>
+
+  <div class="wheel-wrap">
+    <div class="pointer" aria-hidden="true"></div>
+    <canvas id="wheel" width="700" height="700"
+      role="img" aria-label="Ruleta con 24 libros clásicos"></canvas>
+  </div>
+
+  <button id="spin" class="primary">GIRAR LA RULETA</button>
+
+  <section id="result" class="result" aria-live="polite">
+    <div class="result-label">Tu próxima lectura</div>
+    <h2 id="bookTitle"></h2>
+    <p class="author" id="bookAuthor"></p>
+    <p class="details" id="bookDetails"></p>
+    <p class="description" id="bookDescription"></p>
+    <p class="question" id="bookQuestion"></p>
+    <button id="share" class="secondary">COMPARTIR MI RESULTADO</button>
+    <button id="again" class="secondary">VOLVER A GIRAR</button>
+  </section>
+
+  <p class="small-note">
+    La ruleta elige una obra al azar. No necesitas registrarte.
+    Las fechas corresponden a la publicación original de cada obra.
+  </p>
+</main>
+
+<footer>
+  <strong>LEE DIFERENTE.</strong><br>
+  Menos algoritmos. Más descubrimientos.<br>
+  Ruleta Nagasawa · Un viaje fuera de las modas.
+</footer>
+
+<script>
+const books = [
+  {
+    title: "Don Quijote de la Mancha",
+    author: "Miguel de Cervantes",
+    years: "1605–1615",
+    death: 1616,
+    genre: "Novela · Aventuras",
+    description: "Un hombre decide vivir según los ideales de los libros de caballerías y sale al mundo acompañado por Sancho Panza. Una aventura sobre los sueños, la realidad y la libertad.",
+    question: "¿Es más importante ver el mundo como es o como creemos que debería ser?"
+  },
+  {
+    title: "La vida es sueño",
+    author: "Pedro Calderón de la Barca",
+    years: "1635",
+    death: 1681,
+    genre: "Teatro · Filosofía",
+    description: "Un príncipe vive encerrado por una profecía. Cuando se le ofrece la posibilidad de gobernar, deberá enfrentarse a la libertad, el destino y sus propias decisiones.",
+    question: "Si no pudieras distinguir el sueño de la realidad, ¿cómo elegirías actuar?"
+  },
+  {
+    title: "Orgullo y prejuicio",
+    author: "Jane Austen",
+    years: "1813",
+    death: 1817,
+    genre: "Novela · Sociedad",
+    description: "Elizabeth Bennet y el señor Darcy se conocen en una sociedad que convierte el matrimonio en una cuestión de estatus. Los prejuicios de ambos complicarán su relación.",
+    question: "¿Cuántas veces confundimos nuestra primera impresión con la verdad?"
+  },
+  {
+    title: "Frankenstein",
+    author: "Mary Shelley",
+    years: "1818",
+    death: 1851,
+    genre: "Novela · Gótico",
+    description: "Victor Frankenstein consigue dar vida a una criatura y después la abandona. Una historia sobre la ambición científica, la soledad y la responsabilidad de crear.",
+    question: "¿Quién es el verdadero monstruo: quien nace diferente o quien lo rechaza?"
+  },
+  {
+    title: "Jane Eyre",
+    author: "Charlotte Brontë",
+    years: "1847",
+    death: 1855,
+    genre: "Novela · Romance",
+    description: "Una joven huérfana lucha por construir una vida propia y encontrar su lugar en un mundo desigual, sin renunciar a su dignidad ni a su independencia.",
+    question: "¿Qué estarías dispuesto a sacrificar para no traicionarte a ti mismo?"
+  },
+  {
+    title: "La Regenta",
+    author: "Leopoldo Alas, «Clarín»",
+    years: "1884–1885",
+    death: 1901,
+    genre: "Novela · Sociedad",
+    description: "En Vetusta, una ciudad de provincias dominada por las apariencias, Ana Ozores busca sentido a una vida atrapada entre las convenciones sociales y sus deseos.",
+    question: "¿Cuánto de lo que hacemos nace de nosotros y cuánto de la presión social?"
+  },
+  {
+    title: "Fortunata y Jacinta",
+    author: "Benito Pérez Galdós",
+    years: "1887",
+    death: 1920,
+    genre: "Novela · Realismo",
+    description: "Dos mujeres de mundos sociales diferentes quedan unidas por sus relaciones con Juanito Santa Cruz. Un retrato amplio de Madrid y de sus desigualdades.",
+    question: "¿Hasta qué punto determina nuestra clase social el rumbo de nuestra vida?"
+  },
+  {
+    title: "El retrato de Dorian Gray",
+    author: "Oscar Wilde",
+    years: "1890–1891",
+    death: 1900,
+    genre: "Novela · Filosofía",
+    description: "Dorian desea conservar su juventud mientras un retrato envejece en su lugar. Una historia sobre la belleza, la vanidad y el precio moral de nuestros actos.",
+    question: "¿Cómo vivirías si nadie pudiera ver las consecuencias de tus decisiones?"
+  },
+  {
+    title: "La máquina del tiempo",
+    author: "H. G. Wells",
+    years: "1895",
+    death: 1946,
+    genre: "Ciencia ficción",
+    description: "Un inventor viaja a un futuro remoto y descubre una humanidad transformada. Bajo la aventura late una reflexión sobre las clases sociales y el progreso.",
+    question: "¿Y si el progreso no significara necesariamente que vivimos mejor?"
+  },
+  {
+    title: "La llamada de lo salvaje",
+    author: "Jack London",
+    years: "1903",
+    death: 1916,
+    genre: "Aventura · Naturaleza",
+    description: "Buck, un perro doméstico, es llevado al Yukón durante la fiebre del oro. En condiciones extremas tendrá que adaptarse para sobrevivir.",
+    question: "¿Qué parte de nosotros aparece cuando desaparecen las comodidades?"
+  },
+  {
+    title: "El árbol de la ciencia",
+    author: "Pío Baroja",
+    years: "1911",
+    death: 1956,
+    genre: "Novela · Filosofía",
+    description: "Andrés Hurtado estudia medicina y trata de comprender una sociedad que le provoca desengaño. Una novela sobre el conocimiento, la incertidumbre y el sentido de vivir.",
+    question: "¿Saber más nos ayuda siempre a vivir mejor?"
+  },
+  {
+    title: "Niebla",
+    author: "Miguel de Unamuno",
+    years: "1914",
+    death: 1936,
+    genre: "Novela · Metaficción",
+    description: "Augusto Pérez empieza a cuestionar su existencia. La novela juega con los límites entre el personaje, su autor y quien lee la historia.",
+    question: "¿Cuánto control tenemos realmente sobre nuestra propia historia?"
+  },
+  {
+    title: "La metamorfosis",
+    author: "Franz Kafka",
+    years: "1915",
+    death: 1924,
+    genre: "Relato · Existencialismo",
+    description: "Gregor Samsa despierta convertido en un ser monstruoso. Su transformación altera la vida familiar y revela la fragilidad de los vínculos y la identidad.",
+    question: "¿Qué ocurre con nuestro valor cuando dejamos de ser útiles para los demás?"
+  },
+  {
+    title: "La señora Dalloway",
+    author: "Virginia Woolf",
+    years: "1925",
+    death: 1941,
+    genre: "Novela · Modernismo",
+    description: "Durante un solo día en Londres, los pensamientos de Clarissa Dalloway y otros personajes entrelazan recuerdos, heridas y expectativas.",
+    question: "¿Cuánto de nuestra vida permanece oculto detrás de lo que mostramos?"
+  },
+  {
+    title: "El proceso",
+    author: "Franz Kafka",
+    years: "1925",
+    death: 1924,
+    genre: "Novela · Absurdo",
+    description: "Josef K. es arrestado sin conocer el delito que se le atribuye y se pierde en una maquinaria judicial incomprensible. La novela apareció de forma póstuma.",
+    question: "¿Cómo defenderte de una acusación cuando nadie te explica de qué se te acusa?"
+  },
+  {
+    title: "El asesinato de Roger Ackroyd",
+    author: "Agatha Christie",
+    years: "1926",
+    death: 1976,
+    genre: "Misterio · Detective",
+    description: "Hércules Poirot investiga una muerte en un tranquilo pueblo inglés. Los testimonios y los secretos de los sospechosos componen un rompecabezas.",
+    question: "¿Qué detalles pasamos por alto cuando creemos saber ya la respuesta?"
+  },
+  {
+    title: "Una habitación propia",
+    author: "Virginia Woolf",
+    years: "1929",
+    death: 1941,
+    genre: "Ensayo · Literatura",
+    description: "Woolf examina las condiciones materiales y sociales que han limitado la creación literaria de las mujeres, incluida la necesidad de dinero y espacio propio.",
+    question: "¿Qué condiciones necesita una persona para desarrollar plenamente su talento?"
+  },
+  {
+    title: "El halcón maltés",
+    author: "Dashiell Hammett",
+    years: "1930",
+    death: 1961,
+    genre: "Novela negra",
+    description: "El detective Sam Spade se ve envuelto en una búsqueda peligrosa alrededor de una estatuilla muy codiciada. Nadie parece decir toda la verdad.",
+    question: "¿Qué sucede cuando cada persona persigue su propio interés?"
+  },
+  {
+    title: "Asesinato en el Orient Express",
+    author: "Agatha Christie",
+    years: "1934",
+    death: 1976,
+    genre: "Misterio · Detective",
+    description: "Un asesinato interrumpe un viaje en tren. Poirot debe reconstruir los hechos entre pasajeros que esconden secretos y versiones contradictorias.",
+    question: "¿Puede una decisión ser injusta ante la ley y comprensible desde la moral?"
+  },
+  {
+    title: "El principito",
+    author: "Antoine de Saint-Exupéry",
+    years: "1943",
+    death: 1944,
+    genre: "Fábula · Filosofía",
+    description: "Un aviador conoce a un pequeño viajero que ha visitado distintos planetas. A través de sus encuentros, el libro explora el afecto, la pérdida y la mirada adulta.",
+    question: "¿Qué cosas importantes dejamos de ver al hacernos mayores?"
+  },
+  {
+    title: "El extranjero",
+    author: "Albert Camus",
+    years: "1942",
+    death: 1960,
+    genre: "Novela · Existencialismo",
+    description: "Meursault atraviesa una serie de acontecimientos con una indiferencia que desconcierta a quienes le rodean. Camus plantea preguntas sobre la sociedad y el absurdo.",
+    question: "¿Hasta qué punto juzgamos a los demás por lo que sienten o por lo que aparentan sentir?"
+  },
+  {
+    title: "Ficciones",
+    author: "Jorge Luis Borges",
+    years: "1944",
+    death: 1986,
+    genre: "Relatos · Fantástico",
+    description: "Una colección de relatos donde bibliotecas infinitas, laberintos, mundos imaginarios y paradojas desafían nuestra idea de la realidad.",
+    question: "¿Y si una idea pudiera cambiar por completo la forma en que entiendes el mundo?"
+  },
+  {
+    title: "Siddhartha",
+    author: "Hermann Hesse",
+    years: "1922",
+    death: 1962,
+    genre: "Novela · Búsqueda interior",
+    description: "Un joven abandona la vida conocida para buscar sabiduría. Su camino le lleva por la austeridad, el placer y la experiencia directa.",
+    question: "¿Se puede aprender a vivir únicamente a través de las enseñanzas de otros?"
+  },
+  {
+    title: "Pedro Páramo",
+    author: "Juan Rulfo",
+    years: "1955",
+    death: 1986,
+    genre: "Novela · Realismo mágico",
+    description: "Juan Preciado llega a Comala para buscar a su padre y encuentra un pueblo poblado por voces, recuerdos y silencios. Una obra breve y profundamente singular.",
+    question: "¿Cómo puede el pasado seguir gobernando la vida de quienes vienen después?"
+  }
+];
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const spinButton = document.getElementById("spin");
+const resultBox = document.getElementById("result");
+const TAU = Math.PI * 2;
+const colors = ["#314b3b", "#f0dfbd", "#8a4335", "#c7a461"];
+let currentRotation = 0;
+let spinning = false;
+let chosenBook = null;
+
+function drawWheel() {
+  const size = canvas.width;
+  const center = size / 2;
+  const radius = size / 2 - 5;
+  const slice = TAU / books.length;
+
+  ctx.clearRect(0, 0, size, size);
+
+  books.forEach((book, i) => {
+    const start = -Math.PI / 2 + i * slice;
+    const end = start + slice;
+
+    ctx.beginPath();
+    ctx.moveTo(center, center);
+    ctx.arc(center, center, radius, start, end);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+    ctx.strokeStyle = "#e5d5b2";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(center, center);
+    ctx.rotate(start + slice / 2);
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = i % colors.length === 1 ? "#29271f" : "#fff8e9";
+    ctx.font = "bold 15px Georgia";
+    let label = book.title;
+    if (label.length > 24) label = label.slice(0, 22) + "…";
+    ctx.fillText(label, radius - 18, 0, radius * 0.54);
+    ctx.restore();
+  });
+
+  ctx.beginPath();
+  ctx.arc(center, center, 53, 0, TAU);
+  ctx.fillStyle = "#20352b";
+  ctx.fill();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = "#c7a461";
+  ctx.stroke();
+
+  ctx.fillStyle = "#f5eddb";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = "bold 15px Georgia";
+  ctx.fillText("LEE", center, center - 9);
+  ctx.fillText("DIFERENTE", center, center + 10);
+}
+
+function showResult(book) {
+  chosenBook = book;
+  document.getElementById("bookTitle").textContent = book.title;
+  document.getElementById("bookAuthor").textContent = book.author;
+  document.getElementById("bookDetails").textContent =
+    "Publicación: " + book.years + " · " + book.genre +
+    " · Fallecimiento del autor: " + book.death;
+  document.getElementById("bookDescription").textContent = book.description;
+  document.getElementById("bookQuestion").textContent = book.question;
+  resultBox.classList.add("show");
+  resultBox.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+  spinButton.disabled = true;
+  resultBox.classList.remove("show");
+
+  const index = Math.floor(Math.random() * books.length);
+  const sliceDegrees = 360 / books.length;
+  const targetDegrees = 360 - (index + 0.5) * sliceDegrees;
+  const currentNormalized = ((currentRotation % 360) + 360) % 360;
+  const adjustment = (targetDegrees - currentNormalized + 360) % 360;
+  const finalRotation = currentRotation + 360 * 6 + adjustment;
+
+  const start = performance.now();
+  const duration = 4600;
+  const initial = currentRotation;
+
+  function animate(now) {
+    const progress = Math.min((now - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 4);
+    currentRotation = initial + (finalRotation - initial) * eased;
+    canvas.style.transform = "rotate(" + currentRotation + "deg)";
+
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      currentRotation = finalRotation % 360;
+      canvas.style.transform = "rotate(" + currentRotation + "deg)";
+      spinning = false;
+      spinButton.disabled = false;
+      showResult(books[index]);
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+spinButton.addEventListener("click", spin);
+document.getElementById("again").addEventListener("click", spin);
+
+document.getElementById("share").addEventListener("click", async () => {
+  if (!chosenBook) return;
+
+  const text = "Mi próxima lectura en la Ruleta Nagasawa: " +
+    chosenBook.title + ", de " + chosenBook.author +
+    ". ¿Qué libro te tocará a ti?";
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: "Ruleta Nagasawa", text, url: location.href });
+    } catch (e) {
+      if (e.name !== "AbortError") copyResult(text);
+    }
+  } else {
+    copyResult(text + "\n" + location.href);
+  }
+});
+
+async function copyResult(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    alert("Texto copiado. Ya puedes compartirlo.");
+  } catch (e) {
+    window.prompt("Copia y comparte tu resultado:", text);
+  }
+}
+
+drawWheel();
+</script>
+</body>
+</html>
